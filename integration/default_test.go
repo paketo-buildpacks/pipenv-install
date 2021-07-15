@@ -73,7 +73,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 			Expect(logs).To(ContainLines(
 				MatchRegexp(fmt.Sprintf(`%s \d+\.\d+\.\d+`, buildpackInfo.Buildpack.Name)),
 				"  Executing build process",
-				MatchRegexp("    Running 'pipenv install"),
+				MatchRegexp("    Running 'pipenv install --skip-lock"),
 			))
 			Expect(logs).To(ContainLines(
 				MatchRegexp(`      Completed in ([0-9]*(\.[0-9]*)?[a-z]+)+`),
@@ -153,6 +153,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 				MatchRegexp(fmt.Sprintf(`%s \d+\.\d+\.\d+`, buildpackInfo.Buildpack.Name)),
 				"  Executing build process",
 				MatchRegexp("    Running 'pipenv install --deploy"),
+				MatchRegexp("    Running 'pipenv clean"),
 			))
 
 			container, err = docker.Container.Run.

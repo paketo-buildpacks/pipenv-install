@@ -44,10 +44,9 @@ func Build(entryResolver EntryResolver, installProcess InstallProcess, clock chr
 			return packit.BuildResult{}, err
 		}
 
-		packagesLayer, err = packagesLayer.Reset()
-		if err != nil {
-			return packit.BuildResult{}, err
-		}
+		packagesLayer.Launch, packagesLayer.Build = entryResolver.MergeLayerTypes(SitePackages, context.Plan.Entries)
+		packagesLayer.Cache = packagesLayer.Launch || packagesLayer.Build
+		cacheLayer.Cache = true
 
 		logger.Process("Executing build process")
 		duration, err := clock.Measure(func() error {
@@ -63,10 +62,6 @@ func Build(entryResolver EntryResolver, installProcess InstallProcess, clock chr
 		packagesLayer.Metadata = map[string]interface{}{
 			"built_at": clock.Now().Format(time.RFC3339Nano),
 		}
-
-		packagesLayer.Launch, packagesLayer.Build = entryResolver.MergeLayerTypes(SitePackages, context.Plan.Entries)
-		packagesLayer.Cache = packagesLayer.Build
-		cacheLayer.Cache = true
 
 		layers := []packit.Layer{packagesLayer}
 		if _, err := os.Stat(cacheLayer.Path); err == nil {
