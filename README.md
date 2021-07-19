@@ -16,6 +16,13 @@ The buildpack will do the following:
 * At run time:
   - Does nothing
 
+This buildpack speeds up the build process by reusing (the layer of) installed
+packages from a previous build if it exists, and later cleaning up any unused
+packages. For apps that do not have a `Pipfile.lock`, clean-up is not performed
+to avoid the overhead of generating a lock file. Users of such apps should
+either include a lock file with their app, or clear their build cache during a
+rebuild to avoid any unused packages in the built image.
+
 ## Integration
 
 The Pipenv Install CNB provides `site-packages` as a dependency. Downstream
