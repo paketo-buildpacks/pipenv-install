@@ -13,8 +13,8 @@ import (
 	"github.com/paketo-buildpacks/packit"
 	"github.com/paketo-buildpacks/packit/chronos"
 	"github.com/paketo-buildpacks/packit/scribe"
-	pipenvinstall "github.com/paketo-community/pipenv-install"
-	"github.com/paketo-community/pipenv-install/fakes"
+	pipenvinstall "github.com/paketo-buildpacks/pipenv-install"
+	"github.com/paketo-buildpacks/pipenv-install/fakes"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"

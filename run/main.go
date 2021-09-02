@@ -8,7 +8,7 @@ import (
 	"github.com/paketo-buildpacks/packit/draft"
 	"github.com/paketo-buildpacks/packit/pexec"
 	"github.com/paketo-buildpacks/packit/scribe"
-	pipenvinstall "github.com/paketo-community/pipenv-install"
+	pipenvinstall "github.com/paketo-buildpacks/pipenv-install"
 )
 
 func main() {

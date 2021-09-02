@@ -32,7 +32,7 @@ func testOffline(t *testing.T, context spec.G, it spec.S) {
 	// Pipenv doesn't seem to support a vendoring/offline use case.
 	// See https://github.com/pypa/pipenv/issues/4068
 	// Also,
-	// See https://github.com/paketo-community/pip/issues/111
+	// See https://github.com/paketo-buildpacks/pip/issues/111
 	// Pip buildpack doesn't yet work offline
 	context.Pend("when the buildpack is run with pack build in offline mode", func() {
 		var (

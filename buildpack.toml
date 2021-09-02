@@ -1,7 +1,7 @@
 api = "0.5"
 
 [buildpack]
-  id = "paketo-community/pipenv-install"
+  id = "paketo-buildpacks/pipenv-install"
   name = "Paketo Pipenv Install Buildpack"
 
 [metadata]

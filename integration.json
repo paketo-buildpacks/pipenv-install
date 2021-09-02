@@ -1,6 +1,6 @@
 {
-  "cpython":"github.com/paketo-community/cpython",
-  "pip":"github.com/paketo-community/pip",
-  "pipenv":"github.com/paketo-community/pipenv",
+  "cpython":"github.com/paketo-buildpacks/cpython",
+  "pip":"github.com/paketo-buildpacks/pip",
+  "pipenv":"github.com/paketo-buildpacks/pipenv",
   "build-plan":"github.com/paketo-community/build-plan"
 }

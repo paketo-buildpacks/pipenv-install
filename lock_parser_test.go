@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	pipenvinstall "github.com/paketo-community/pipenv-install"
+	pipenvinstall "github.com/paketo-buildpacks/pipenv-install"
 	"github.com/sclevine/spec"
 )
 
