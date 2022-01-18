@@ -70,6 +70,7 @@ func (p PipenvInstallProcess) Execute(workingDir string, targetLayer, cacheLayer
 			// Pipenv seems to disregard PYTHONUSERBASE.
 			// Target dir set using WORKON_HOME which is a virtualenv setting.
 			"PIP_USER=1",
+			"PIP_IGNORE_INSTALLED=1",
 			fmt.Sprintf("WORKON_HOME=%s", targetPath),
 			fmt.Sprintf("PIPENV_CACHE_DIR=%s", cachePath)),
 		Dir:    workingDir,
