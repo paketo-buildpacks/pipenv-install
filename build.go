@@ -2,6 +2,7 @@ package pipenvinstall
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/paketo-buildpacks/packit"
@@ -12,6 +13,8 @@ import (
 
 //go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
 //go:generate faux --interface InstallProcess --output fakes/install_process.go
+//go:generate faux --interface SitePackagesProcess --output fakes/site_packages_process.go
+//go:generate faux --interface VenvDirLocator --output fakes/venv_dir_locator.go
 
 // EntryResolver defines the interface for picking the most relevant entry from
 // the Buildpack Plan entries.
@@ -19,9 +22,20 @@ type EntryResolver interface {
 	MergeLayerTypes(name string, entries []packit.BuildpackPlanEntry) (launch, build bool)
 }
 
+// SitePackagesProcess defines the interface for determining the site-packages path.
+type SitePackagesProcess interface {
+	Execute(layerPath string) (sitePackagesPath string, err error)
+}
+
 // InstallProcess defines the interface for installing the pipenv dependencies.
 type InstallProcess interface {
 	Execute(workingDir string, targetLayer, cacheLayer packit.Layer) error
+}
+
+// VenvDirLocator defines the interface for locating the virtual environment
+// directory under a given path
+type VenvDirLocator interface {
+	LocateVenvDir(path string) (venvDir string, err error)
 }
 
 // Build will return a packit.BuildFunc that will be invoked during the build
@@ -30,7 +44,14 @@ type InstallProcess interface {
 // Build will install the pipenv dependencies by using the Pipfile to a
 // packages layer. It also makes use of a cache layer to reuse the pipenv
 // cache.
-func Build(entryResolver EntryResolver, installProcess InstallProcess, clock chronos.Clock, logger scribe.Emitter) packit.BuildFunc {
+func Build(
+	entryResolver EntryResolver,
+	installProcess InstallProcess,
+	siteProcess SitePackagesProcess,
+	venvDirLocator VenvDirLocator,
+	clock chronos.Clock,
+	logger scribe.Emitter,
+) packit.BuildFunc {
 	return func(context packit.BuildContext) (packit.BuildResult, error) {
 		logger.Title("%s %s", context.BuildpackInfo.Name, context.BuildpackInfo.Version)
 
@@ -57,6 +78,22 @@ func Build(entryResolver EntryResolver, installProcess InstallProcess, clock chr
 		}
 
 		logger.Action("Completed in %s", duration.Round(time.Millisecond))
+		logger.Break()
+
+		venvDir, err := venvDirLocator.LocateVenvDir(packagesLayer.Path)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		sitePackagesPath, err := siteProcess.Execute(packagesLayer.Path)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		logger.Process("Configuring environment")
+		packagesLayer.SharedEnv.Prepend("PATH", filepath.Join(venvDir, "bin"), ":")
+		packagesLayer.SharedEnv.Prepend("PYTHONPATH", sitePackagesPath, string(os.PathListSeparator))
+		logger.Subprocess("%s", scribe.NewFormattedMapFromEnvironment(packagesLayer.SharedEnv))
 		logger.Break()
 
 		packagesLayer.Metadata = map[string]interface{}{

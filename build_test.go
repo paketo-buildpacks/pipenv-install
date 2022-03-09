@@ -28,12 +28,15 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		workingDir string
 		cnbDir     string
 
-		clock          chronos.Clock
-		timeStamp      time.Time
-		installProcess *fakes.InstallProcess
-		buffer         *bytes.Buffer
-		logEmitter     scribe.Emitter
-		entryResolver  *fakes.EntryResolver
+		clock      chronos.Clock
+		timeStamp  time.Time
+		buffer     *bytes.Buffer
+		logEmitter scribe.Emitter
+
+		entryResolver       *fakes.EntryResolver
+		installProcess      *fakes.InstallProcess
+		sitePackagesProcess *fakes.SitePackagesProcess
+		venvDirLocator      *fakes.VenvDirLocator
 
 		build packit.BuildFunc
 	)
@@ -49,8 +52,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		cnbDir, err = ioutil.TempDir("", "cnb")
 		Expect(err).NotTo(HaveOccurred())
 
-		installProcess = &fakes.InstallProcess{}
 		entryResolver = &fakes.EntryResolver{}
+		installProcess = &fakes.InstallProcess{}
+		sitePackagesProcess = &fakes.SitePackagesProcess{}
+		venvDirLocator = &fakes.VenvDirLocator{}
+
+		sitePackagesProcess.ExecuteCall.Returns.SitePackagesPath = "some-site-packages-path"
+		venvDirLocator.LocateVenvDirCall.Returns.VenvDir = "some-venv-dir"
 
 		buffer = bytes.NewBuffer(nil)
 		logEmitter = scribe.NewEmitter(buffer)
@@ -60,7 +68,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			return timeStamp
 		})
 
-		build = pipenvinstall.Build(entryResolver, installProcess, clock, logEmitter)
+		build = pipenvinstall.Build(entryResolver, installProcess, sitePackagesProcess, venvDirLocator, clock, logEmitter)
 	})
 
 	it.After(func() {
@@ -79,7 +87,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Plan: packit.BuildpackPlan{
 				Entries: []packit.BuildpackPlanEntry{
 					{
-						Name: pipenvinstall.SitePackages,
+						Name: "site-packages",
 					},
 				},
 			},
@@ -92,9 +100,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(result).To(Equal(packit.BuildResult{
 			Layers: []packit.Layer{
 				{
-					Name:             pipenvinstall.PackagesLayerName,
-					Path:             filepath.Join(layersDir, pipenvinstall.PackagesLayerName),
-					SharedEnv:        packit.Environment{},
+					Name: "packages",
+					Path: filepath.Join(layersDir, "packages"),
+					SharedEnv: packit.Environment{
+						"PATH.delim":         ":",
+						"PATH.prepend":       filepath.Join("some-venv-dir", "bin"),
+						"PYTHONPATH.delim":   ":",
+						"PYTHONPATH.prepend": "some-site-packages-path",
+					},
 					BuildEnv:         packit.Environment{},
 					LaunchEnv:        packit.Environment{},
 					ProcessLaunchEnv: map[string]packit.Environment{},
@@ -110,12 +123,12 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		}))
 
 		Expect(installProcess.ExecuteCall.Receives.WorkingDir).To(Equal(workingDir))
-		Expect(installProcess.ExecuteCall.Receives.TargetLayer.Path).To(Equal(filepath.Join(layersDir, pipenvinstall.PackagesLayerName)))
-		Expect(installProcess.ExecuteCall.Receives.CacheLayer.Path).To(Equal(filepath.Join(layersDir, pipenvinstall.CacheLayerName)))
+		Expect(installProcess.ExecuteCall.Receives.TargetLayer.Path).To(Equal(filepath.Join(layersDir, "packages")))
+		Expect(installProcess.ExecuteCall.Receives.CacheLayer.Path).To(Equal(filepath.Join(layersDir, "cache")))
 
-		Expect(entryResolver.MergeLayerTypesCall.Receives.Name).To(Equal(pipenvinstall.SitePackages))
+		Expect(entryResolver.MergeLayerTypesCall.Receives.Name).To(Equal("site-packages"))
 		Expect(entryResolver.MergeLayerTypesCall.Receives.Entries).To(Equal([]packit.BuildpackPlanEntry{
-			{Name: pipenvinstall.SitePackages},
+			{Name: "site-packages"},
 		}))
 
 		Expect(buffer.String()).To(ContainSubstring("Some Buildpack some-version"))
@@ -139,7 +152,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Plan: packit.BuildpackPlan{
 					Entries: []packit.BuildpackPlanEntry{
 						{
-							Name: pipenvinstall.SitePackages,
+							Name: "site-packages",
 						},
 					},
 				},
@@ -152,9 +165,14 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(result).To(Equal(packit.BuildResult{
 				Layers: []packit.Layer{
 					{
-						Name:             pipenvinstall.PackagesLayerName,
-						Path:             filepath.Join(layersDir, pipenvinstall.PackagesLayerName),
-						SharedEnv:        packit.Environment{},
+						Name: "packages",
+						Path: filepath.Join(layersDir, "packages"),
+						SharedEnv: packit.Environment{
+							"PATH.delim":         ":",
+							"PATH.prepend":       filepath.Join("some-venv-dir", "bin"),
+							"PYTHONPATH.delim":   ":",
+							"PYTHONPATH.prepend": "some-site-packages-path",
+						},
 						BuildEnv:         packit.Environment{},
 						LaunchEnv:        packit.Environment{},
 						ProcessLaunchEnv: map[string]packit.Environment{},
@@ -195,7 +213,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				Plan: packit.BuildpackPlan{
 					Entries: []packit.BuildpackPlanEntry{
 						{
-							Name: pipenvinstall.SitePackages,
+							Name: "site-packages",
 						},
 					},
 				},
@@ -208,9 +226,15 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			Expect(result).To(Equal(packit.BuildResult{
 				Layers: []packit.Layer{
 					{
-						Name:             pipenvinstall.PackagesLayerName,
-						Path:             filepath.Join(layersDir, pipenvinstall.PackagesLayerName),
-						SharedEnv:        packit.Environment{},
+						Name: "packages",
+						Path: filepath.Join(layersDir, "packages"),
+						SharedEnv: packit.Environment{
+							"PATH.delim":         ":",
+							"PATH.prepend":       filepath.Join("some-venv-dir", "bin"),
+							"PYTHONPATH.delim":   ":",
+							"PYTHONPATH.prepend": "some-site-packages-path",
+						},
+
 						BuildEnv:         packit.Environment{},
 						LaunchEnv:        packit.Environment{},
 						ProcessLaunchEnv: map[string]packit.Environment{},
@@ -223,8 +247,8 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 						},
 					},
 					{
-						Name:             pipenvinstall.CacheLayerName,
-						Path:             filepath.Join(layersDir, pipenvinstall.CacheLayerName),
+						Name:             "cache",
+						Path:             filepath.Join(layersDir, "cache"),
 						SharedEnv:        packit.Environment{},
 						BuildEnv:         packit.Environment{},
 						LaunchEnv:        packit.Environment{},
@@ -294,6 +318,60 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 					Layers: packit.Layers{Path: layersDir},
 				})
 				Expect(err).To(MatchError(ContainSubstring("some-error")))
+			})
+		})
+
+		context("when venv directory locator returns an error", func() {
+			it.Before(func() {
+				venvDirLocator.LocateVenvDirCall.Returns.Err = errors.New("some-venv-error")
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					WorkingDir: workingDir,
+					CNBPath:    cnbDir,
+					Stack:      "some-stack",
+					BuildpackInfo: packit.BuildpackInfo{
+						Name:    "Some Buildpack",
+						Version: "some-version",
+					},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{
+								Name: "site-packages",
+							},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+				})
+				Expect(err).To(MatchError(ContainSubstring("some-venv-error")))
+			})
+		})
+
+		context("when site packages process locator returns an error", func() {
+			it.Before(func() {
+				sitePackagesProcess.ExecuteCall.Returns.Err = errors.New("some-site-error")
+			})
+
+			it("returns an error", func() {
+				_, err := build(packit.BuildContext{
+					WorkingDir: workingDir,
+					CNBPath:    cnbDir,
+					Stack:      "some-stack",
+					BuildpackInfo: packit.BuildpackInfo{
+						Name:    "Some Buildpack",
+						Version: "some-version",
+					},
+					Plan: packit.BuildpackPlan{
+						Entries: []packit.BuildpackPlanEntry{
+							{
+								Name: "site-packages",
+							},
+						},
+					},
+					Layers: packit.Layers{Path: layersDir},
+				})
+				Expect(err).To(MatchError(ContainSubstring("some-site-error")))
 			})
 		})
 	})

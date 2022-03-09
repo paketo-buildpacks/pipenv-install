@@ -14,7 +14,10 @@ import (
 func main() {
 	planner := draft.NewPlanner()
 	logger := scribe.NewEmitter(os.Stdout)
-	installProcess := pipenvinstall.NewPipenvInstallProcess(pexec.NewExecutable("pipenv"), logger)
+	installProcess := pipenvinstall.NewPipenvInstallProcess(
+		pexec.NewExecutable("pipenv"),
+		logger,
+	)
 	pipfileParser := pipenvinstall.NewPipfileParser()
 	lockParser := pipenvinstall.NewPipfileLockParser()
 
@@ -26,6 +29,8 @@ func main() {
 		pipenvinstall.Build(
 			planner,
 			installProcess,
+			pipenvinstall.NewSiteProcess(pexec.NewExecutable("python")),
+			pipenvinstall.NewVenvLocator(),
 			chronos.DefaultClock,
 			logger,
 		),

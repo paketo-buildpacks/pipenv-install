@@ -80,8 +80,8 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 			))
 			Expect(logs).To(ContainLines(
 				"  Configuring environment",
-				MatchRegexp(fmt.Sprintf(`    PATH           -> "/layers/%s/packages/[\w_-]+/bin:\$PATH"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))),
-				MatchRegexp(fmt.Sprintf(`    PYTHONUSERBASE -> "/layers/%s/packages/[\w_-]+"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))),
+				MatchRegexp(fmt.Sprintf(`    PATH       -> "/layers/%s/packages/[\w_-]+/bin:\$PATH"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))),
+				MatchRegexp(fmt.Sprintf(`    PYTHONPATH -> "/layers/%s/packages/lib/python\d+\.\d+/site-packages:\$PYTHONPATH"`, strings.ReplaceAll(buildpackInfo.Buildpack.ID, "/", "_"))),
 			))
 			Expect(logs).To(ContainLines(
 				// Due to Pipfile requirement

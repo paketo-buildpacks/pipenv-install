@@ -82,35 +82,6 @@ func (p PipenvInstallProcess) Execute(workingDir string, targetLayer, cacheLayer
 		return fmt.Errorf("pipenv install failed:\n%s\nerror: %w", buffer.String(), err)
 	}
 
-	// It would have been cleaner to run "pipenv --venv"
-	// and extract out the exact virtual env dir,
-	// but it doesn't seem to work.
-	// So we look for the dir with pyvenv.cfg in $WORKON_HOME
-	venvDir := ""
-	entries, err := os.ReadDir(targetPath)
-	if err != nil {
-		return fmt.Errorf("reading target directory %s failed:\nerror: %w", targetPath, err)
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		_, err := os.Stat(filepath.Join(targetPath, entry.Name(), "pyvenv.cfg"))
-		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				continue
-			}
-			return fmt.Errorf("pipenv virtual env dir look up failed in target %s: %w", targetPath, err)
-		}
-		venvDir = entry.Name()
-		break
-	}
-
-	if venvDir == "" {
-		return fmt.Errorf("pipenv virtual env directory not found in target %s", targetPath)
-	}
-
 	// if clean is run when no lock file exists, it will generate
 	// one, which is an expensive operation.
 	if lockExists {
@@ -130,12 +101,6 @@ func (p PipenvInstallProcess) Execute(workingDir string, targetLayer, cacheLayer
 			return fmt.Errorf("pipenv clean failed:\n%s\nerror: %w", buffer.String(), err)
 		}
 	}
-
-	p.logger.Process("Configuring environment")
-	targetLayer.SharedEnv.Prepend("PATH", filepath.Join(targetPath, venvDir, "bin"), ":")
-	targetLayer.SharedEnv.Default("PYTHONUSERBASE", filepath.Join(targetPath, venvDir))
-	p.logger.Subprocess("%s", scribe.NewFormattedMapFromEnvironment(targetLayer.SharedEnv))
-	p.logger.Break()
 
 	return nil
 }

@@ -14,5 +14,7 @@ func TestUnitPipenvInstall(t *testing.T) {
 	suite("InstallProcess", testInstallProcess)
 	suite("LockParser", testLockParser)
 	suite("PipfileParser", testPipfileParser)
+	suite("SitePackagesProcess", testSiteProcess)
+	suite("VenvLocator", testVenvLocator)
 	suite.Run(t)
 }
