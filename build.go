@@ -8,6 +8,7 @@ import (
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
 	"github.com/paketo-buildpacks/packit/v2/fs"
+	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
 
@@ -15,6 +16,7 @@ import (
 //go:generate faux --interface InstallProcess --output fakes/install_process.go
 //go:generate faux --interface SitePackagesProcess --output fakes/site_packages_process.go
 //go:generate faux --interface VenvDirLocator --output fakes/venv_dir_locator.go
+//go:generate faux --interface SBOMGenerator --output fakes/sbom_generator.go
 
 // EntryResolver defines the interface for picking the most relevant entry from
 // the Buildpack Plan entries.
@@ -38,6 +40,10 @@ type VenvDirLocator interface {
 	LocateVenvDir(path string) (venvDir string, err error)
 }
 
+type SBOMGenerator interface {
+	Generate(dir string) (sbom.SBOM, error)
+}
+
 // Build will return a packit.BuildFunc that will be invoked during the build
 // phase of the buildpack lifecycle.
 //
@@ -49,6 +55,7 @@ func Build(
 	installProcess InstallProcess,
 	siteProcess SitePackagesProcess,
 	venvDirLocator VenvDirLocator,
+	sbomGenerator SBOMGenerator,
 	clock chronos.Clock,
 	logger scribe.Emitter,
 ) packit.BuildFunc {
@@ -86,6 +93,26 @@ func Build(
 		}
 
 		sitePackagesPath, err := siteProcess.Execute(packagesLayer.Path)
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+
+		logger.GeneratingSBOM(packagesLayer.Path)
+
+		var sbomContent sbom.SBOM
+		duration, err = clock.Measure(func() error {
+			sbomContent, err = sbomGenerator.Generate(context.WorkingDir)
+			return err
+		})
+		if err != nil {
+			return packit.BuildResult{}, err
+		}
+		logger.Action("Completed in %s", duration.Round(time.Millisecond))
+		logger.Break()
+
+		logger.FormattingSBOM(context.BuildpackInfo.SBOMFormats...)
+
+		packagesLayer.SBOM, err = sbomContent.InFormats(context.BuildpackInfo.SBOMFormats...)
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
