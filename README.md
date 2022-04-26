@@ -56,6 +56,19 @@ file that looks like the following:
     launch = true
 ```
 
+## SBOM
+
+This buildpack can generate a Software Bill of Materials (SBOM) for the dependencies of an application.
+
+However, this feature only works if the application already has a
+`Pipfile.lock` file. This is due to a limitation in the upstream SBOM
+generation library (Syft).
+
+Applications that declare their dependencies via a `Pipfile` but do not include
+a `Pipfile.lock` will result in an empty SBOM. Check out the [Paketo SBOM
+documentation](https://paketo.io/docs/howto/sbom/) for more information about
+how to access the SBOM.
+
 ## Usage
 
 To package this buildpack for consumption:
