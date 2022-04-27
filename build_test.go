@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
@@ -29,8 +28,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		workingDir string
 		cnbDir     string
 
-		clock      chronos.Clock
-		timeStamp  time.Time
 		buffer     *bytes.Buffer
 		logEmitter scribe.Emitter
 
@@ -68,18 +65,13 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buffer = bytes.NewBuffer(nil)
 		logEmitter = scribe.NewEmitter(buffer)
 
-		timeStamp = time.Now()
-		clock = chronos.NewClock(func() time.Time {
-			return timeStamp
-		})
-
 		build = pipenvinstall.Build(
 			entryResolver,
 			installProcess,
 			sitePackagesProcess,
 			venvDirLocator,
 			sbomGenerator,
-			clock,
+			chronos.DefaultClock,
 			logEmitter)
 
 		buildContext = packit.BuildContext{
@@ -132,9 +124,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(packagesLayer.SharedEnv["PATH.delim"]).To(Equal(":"))
 		Expect(packagesLayer.SharedEnv["PYTHONPATH.prepend"]).To(Equal("some-site-packages-path"))
 		Expect(packagesLayer.SharedEnv["PYTHONPATH.delim"]).To(Equal(":"))
-
-		Expect(packagesLayer.Metadata).To(HaveLen(1))
-		Expect(packagesLayer.Metadata["built_at"]).To(Equal(timeStamp.Format(time.RFC3339Nano)))
 
 		Expect(packagesLayer.SBOM.Formats()).To(Equal([]packit.SBOMFormat{
 			{

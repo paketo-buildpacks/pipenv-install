@@ -123,10 +123,6 @@ func Build(
 		logger.Subprocess("%s", scribe.NewFormattedMapFromEnvironment(packagesLayer.SharedEnv))
 		logger.Break()
 
-		packagesLayer.Metadata = map[string]interface{}{
-			"built_at": clock.Now().Format(time.RFC3339Nano),
-		}
-
 		layers := []packit.Layer{packagesLayer}
 		if _, err := os.Stat(cacheLayer.Path); err == nil {
 			if !fs.IsEmptyDir(cacheLayer.Path) {
