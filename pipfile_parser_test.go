@@ -1,7 +1,6 @@
 package pipenvinstall_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,7 +20,7 @@ func testPipfileParser(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
 		parser = pipenvinstall.NewPipfileParser()
@@ -31,7 +30,7 @@ func testPipfileParser(t *testing.T, context spec.G, it spec.S) {
 		context("when Pipfile is valid and specifies a CPython version", func() {
 
 			it.Before(func() {
-				Expect(ioutil.WriteFile(
+				Expect(os.WriteFile(
 					filepath.Join(workingDir, "Pipfile"),
 					[]byte(`
 [requires]
@@ -53,7 +52,7 @@ python_version = "3.8"
 		context("failure cases", func() {
 			context("when Pipfile file cannot be read", func() {
 				it.Before(func() {
-					Expect(ioutil.WriteFile(
+					Expect(os.WriteFile(
 						filepath.Join(workingDir, "Pipfile"),
 						[]byte(`{}`), os.ModePerm)).To(Succeed())
 					Expect(os.Chmod(filepath.Join(workingDir, "Pipfile"), 0000)).To(Succeed())
@@ -71,7 +70,7 @@ python_version = "3.8"
 
 			context("when the contents of the Pipfile file are malformed", func() {
 				it.Before(func() {
-					Expect(ioutil.WriteFile(
+					Expect(os.WriteFile(
 						filepath.Join(workingDir, "Pipfile"),
 						[]byte(`%%%%%%%%`), os.ModePerm)).To(Succeed())
 				})

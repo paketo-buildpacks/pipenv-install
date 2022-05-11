@@ -1,7 +1,6 @@
 package pipenvinstall_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,11 +22,11 @@ func testVenvLocator(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		layerPath, err = ioutil.TempDir("", "layer")
+		layerPath, err = os.MkdirTemp("", "layer")
 		Expect(err).NotTo(HaveOccurred())
 
 		Expect(os.Mkdir(filepath.Join(layerPath, "some-virtualenv-dir"), os.ModePerm)).To(Succeed())
-		Expect(ioutil.WriteFile(filepath.Join(layerPath, "some-virtualenv-dir", "pyvenv.cfg"), nil, os.ModePerm)).To(Succeed())
+		Expect(os.WriteFile(filepath.Join(layerPath, "some-virtualenv-dir", "pyvenv.cfg"), nil, os.ModePerm)).To(Succeed())
 
 		Expect(os.Mkdir(filepath.Join(layerPath, "some-other-dir"), os.ModePerm)).To(Succeed())
 
@@ -81,7 +80,7 @@ func testVenvLocator(t *testing.T, context spec.G, it spec.S) {
 				var emptyLayerPath string
 				it.Before(func() {
 					var err error
-					emptyLayerPath, err = ioutil.TempDir("", "layer")
+					emptyLayerPath, err = os.MkdirTemp("", "layer")
 					Expect(err).NotTo(HaveOccurred())
 				})
 

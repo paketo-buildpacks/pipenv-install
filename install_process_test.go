@@ -3,7 +3,6 @@ package pipenvinstall_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -36,21 +35,21 @@ func testInstallProcess(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		packagesLayerPath, err = ioutil.TempDir("", "packages")
+		packagesLayerPath, err = os.MkdirTemp("", "packages")
 		Expect(err).NotTo(HaveOccurred())
 
 		packagesLayer = packit.Layer{Path: packagesLayerPath}
 		packagesLayer, err = packagesLayer.Reset()
 		Expect(err).NotTo(HaveOccurred())
 
-		cacheLayerPath, err = ioutil.TempDir("", "cache")
+		cacheLayerPath, err = os.MkdirTemp("", "cache")
 		Expect(err).NotTo(HaveOccurred())
 
 		cacheLayer = packit.Layer{Path: cacheLayerPath}
 		cacheLayer, err = cacheLayer.Reset()
 		Expect(err).NotTo(HaveOccurred())
 
-		workingDir, err = ioutil.TempDir("", "workingdir")
+		workingDir, err = os.MkdirTemp("", "workingdir")
 		Expect(err).NotTo(HaveOccurred())
 
 		executions = []pexec.Execution{}

@@ -1,7 +1,6 @@
 package pipenvinstall_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,7 +20,7 @@ func testLockParser(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		workingDir, err = ioutil.TempDir("", "working-dir")
+		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
 
 		parser = pipenvinstall.NewPipfileLockParser()
@@ -31,7 +30,7 @@ func testLockParser(t *testing.T, context spec.G, it spec.S) {
 		context("when Pipfile.lock is valid and specifies a CPython version", func() {
 
 			it.Before(func() {
-				Expect(ioutil.WriteFile(
+				Expect(os.WriteFile(
 					filepath.Join(workingDir, "Pipfile.lock"),
 					[]byte(`{
     "_meta": {
@@ -65,7 +64,7 @@ func testLockParser(t *testing.T, context spec.G, it spec.S) {
 		context("failure cases", func() {
 			context("when Pipfile.lock file cannot be read", func() {
 				it.Before(func() {
-					Expect(ioutil.WriteFile(
+					Expect(os.WriteFile(
 						filepath.Join(workingDir, "Pipfile.lock"),
 						[]byte(`{}`), os.ModePerm)).To(Succeed())
 					Expect(os.Chmod(filepath.Join(workingDir, "Pipfile.lock"), 0000)).To(Succeed())
@@ -83,7 +82,7 @@ func testLockParser(t *testing.T, context spec.G, it spec.S) {
 
 			context("when the contents of the Pipfile.lock file are malformed", func() {
 				it.Before(func() {
-					Expect(ioutil.WriteFile(
+					Expect(os.WriteFile(
 						filepath.Join(workingDir, "Pipfile.lock"),
 						[]byte(`%%%%%%%%`), os.ModePerm)).To(Succeed())
 				})

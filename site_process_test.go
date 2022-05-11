@@ -3,14 +3,13 @@ package pipenvinstall_test
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/paketo-buildpacks/packit/v2/pexec"
-	"github.com/paketo-buildpacks/pipenv-install/fakes"
 	pipenvinstall "github.com/paketo-buildpacks/pipenv-install"
+	"github.com/paketo-buildpacks/pipenv-install/fakes"
 	"github.com/sclevine/spec"
 
 	. "github.com/onsi/gomega"
@@ -28,7 +27,7 @@ func testSiteProcess(t *testing.T, context spec.G, it spec.S) {
 
 	it.Before(func() {
 		var err error
-		layerPath, err = ioutil.TempDir("", "layer")
+		layerPath, err = os.MkdirTemp("", "layer")
 		Expect(err).NotTo(HaveOccurred())
 
 		executable = &fakes.Executable{}
