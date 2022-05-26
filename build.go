@@ -117,11 +117,10 @@ func Build(
 			return packit.BuildResult{}, err
 		}
 
-		logger.Process("Configuring environment")
 		packagesLayer.SharedEnv.Prepend("PATH", filepath.Join(venvDir, "bin"), ":")
 		packagesLayer.SharedEnv.Prepend("PYTHONPATH", sitePackagesPath, string(os.PathListSeparator))
-		logger.Subprocess("%s", scribe.NewFormattedMapFromEnvironment(packagesLayer.SharedEnv))
-		logger.Break()
+
+		logger.EnvironmentVariables(packagesLayer)
 
 		layers := []packit.Layer{packagesLayer}
 		if _, err := os.Stat(cacheLayer.Path); err == nil {
