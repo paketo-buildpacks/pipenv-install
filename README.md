@@ -6,15 +6,12 @@ The buildpack is published for consumption at
 `gcr.io/paketo-buildpacks/pipenv-install` and `paketobuildpacks/pipenv-install`.
 
 ## Behavior
-This buildpack participates if `Pipfile` exists at the root the app.
+This buildpack participates if `Pipfile` exists at the root of the app.
 
 The buildpack will do the following:
-* At build time:
-  - Installs the application packages to a layer made available to the app.
-  - Prepends the layer site-packages onto `PYTHONPATH`.
-  - Prepends the layer's `bin` directory to the `PATH`.
-* At run time:
-  - Does nothing
+- Installs the application packages to a layer made available to the app.
+- Prepends the layer site-packages onto `PYTHONPATH`.
+- Prepends the layer's `bin` directory to the `PATH`.
 
 This buildpack speeds up the build process by reusing (the layer of) installed
 packages from a previous build if it exists, and later cleaning up any unused
@@ -26,9 +23,8 @@ rebuild to avoid any unused packages in the built image.
 ## Integration
 
 The Pipenv Install CNB provides `site-packages` as a dependency. Downstream
-buildpacks can require the `site-packages` dependency by generating a [Build
-Plan
-TOML](https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
+buildpacks can require the `site-packages` dependency by generating a [Build Plan TOML]
+(https://github.com/buildpacks/spec/blob/master/buildpack.md#build-plan-toml)
 file that looks like the following:
 
 ```toml
@@ -42,17 +38,12 @@ file that looks like the following:
   # The Pipenv Install buildpack supports some non-required metadata options.
   [requires.metadata]
 
-    # Setting the build flag to true will ensure that the site-packages
-    # dependency is available on the $PYTHONPATH/$PATH for subsequent
-    # buildpacks during their build phase. If you are writing a buildpack that
-    # needs site-packages during its build process, this flag should be
-    # set to true.
+    # Set the build flag to true to make the site-packages dependency available on the $PYTHONPATH/$PATH
+    # for subsequent buildpacks during their build phase.
     build = true
 
-    # Setting the launch flag to true will ensure that the site-packages
-    # dependency is available on the $PYTHONPATH/$PATH for the running
-    # application. If you are writing an application that needs site-packages
-    # at runtime, this flag should be set to true.
+    # Set the launch flag to true to make the site-packages dependency available on the $PYTHONPATH/$PATH
+    # for the running application.
     launch = true
 ```
 
@@ -60,9 +51,8 @@ file that looks like the following:
 
 This buildpack can generate a Software Bill of Materials (SBOM) for the dependencies of an application.
 
-However, this feature only works if the application already has a
-`Pipfile.lock` file. This is due to a limitation in the upstream SBOM
-generation library (Syft).
+However, this feature only works if the application already has a `Pipfile.lock` file.
+This is due to a limitation in the upstream SBOM generation library (Syft).
 
 Applications that declare their dependencies via a `Pipfile` but do not include
 a `Pipfile.lock` will result in an empty SBOM. Check out the [Paketo SBOM
@@ -75,10 +65,15 @@ To package this buildpack for consumption:
 ```
 $ ./scripts/package.sh --version x.x.x
 ```
-This will create a `buildpackage.cnb` file under the build directory which you
-can use to build your app as follows: `pack build <app-name> -p <path-to-app>
--b <cpython buildpack> -b <pipenv buildpack> -b build/buildpackage.cnb -b
-<other-buildpacks..>`.
+This will create a `buildpackage.cnb` file under the build directory which you can use to build your app as follows:
+```shell
+pack build <app-name> \
+  --path <path-to-app> \
+  --buildpack <cpython buildpack> \
+  --buildpack <pipenv buildpack> \
+  --buildpack build/buildpackage.cnb \
+  --buildpack <other-buildpacks..>
+```
 
 To run the unit and integration tests for this buildpack:
 ```
