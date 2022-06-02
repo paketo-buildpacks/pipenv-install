@@ -7,22 +7,16 @@ import (
 
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
+	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
 )
 
-//go:generate faux --interface EntryResolver --output fakes/entry_resolver.go
 //go:generate faux --interface InstallProcess --output fakes/install_process.go
 //go:generate faux --interface SitePackagesProcess --output fakes/site_packages_process.go
 //go:generate faux --interface VenvDirLocator --output fakes/venv_dir_locator.go
 //go:generate faux --interface SBOMGenerator --output fakes/sbom_generator.go
-
-// EntryResolver defines the interface for picking the most relevant entry from
-// the Buildpack Plan entries.
-type EntryResolver interface {
-	MergeLayerTypes(name string, entries []packit.BuildpackPlanEntry) (launch, build bool)
-}
 
 // SitePackagesProcess defines the interface for determining the site-packages path.
 type SitePackagesProcess interface {
@@ -51,7 +45,6 @@ type SBOMGenerator interface {
 // packages layer. It also makes use of a cache layer to reuse the pipenv
 // cache.
 func Build(
-	entryResolver EntryResolver,
 	installProcess InstallProcess,
 	siteProcess SitePackagesProcess,
 	venvDirLocator VenvDirLocator,
@@ -72,7 +65,8 @@ func Build(
 			return packit.BuildResult{}, err
 		}
 
-		packagesLayer.Launch, packagesLayer.Build = entryResolver.MergeLayerTypes(SitePackages, context.Plan.Entries)
+		planner := draft.NewPlanner()
+		packagesLayer.Launch, packagesLayer.Build = planner.MergeLayerTypes(SitePackages, context.Plan.Entries)
 		packagesLayer.Cache = packagesLayer.Launch || packagesLayer.Build
 		cacheLayer.Cache = true
 
