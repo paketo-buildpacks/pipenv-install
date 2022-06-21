@@ -5,7 +5,6 @@ import (
 
 	"github.com/paketo-buildpacks/packit/v2"
 	"github.com/paketo-buildpacks/packit/v2/chronos"
-	"github.com/paketo-buildpacks/packit/v2/draft"
 	"github.com/paketo-buildpacks/packit/v2/pexec"
 	"github.com/paketo-buildpacks/packit/v2/sbom"
 	"github.com/paketo-buildpacks/packit/v2/scribe"
@@ -27,7 +26,6 @@ func main() {
 			pipenvinstall.NewPipfileLockParser(),
 		),
 		pipenvinstall.Build(
-			draft.NewPlanner(),
 			pipenvinstall.NewPipenvInstallProcess(pexec.NewExecutable("pipenv"), logger),
 			pipenvinstall.NewSiteProcess(pexec.NewExecutable("python")),
 			pipenvinstall.NewVenvLocator(),

@@ -6,9 +6,10 @@ import (
 	"path/filepath"
 
 	"github.com/paketo-buildpacks/packit/v2"
+	"github.com/paketo-buildpacks/packit/v2/fs"
 )
 
-// BuildPlanMetadata is the buildpack specific data included in build plan
+// BuildPlanMetadata is the buildpack-specific data included in build plan
 // requirements.
 type BuildPlanMetadata struct {
 	// Build denotes the dependency is needed at build-time.
@@ -21,7 +22,7 @@ type BuildPlanMetadata struct {
 
 //go:generate faux --interface Parser --output fakes/parser.go
 
-// Interface to parse python version out of Pipfile.lock.
+// Parser will parse python version out of Pipfile.lock.
 type Parser interface {
 	ParseVersion(path string) (version string, err error)
 }
@@ -49,7 +50,7 @@ func Detect(pipfileParser, pipfileLockParser Parser) packit.DetectFunc {
 			},
 		}
 
-		lockFileExists, err := fileExists(filepath.Join(context.WorkingDir, "Pipfile.lock"))
+		lockFileExists, err := fs.Exists(filepath.Join(context.WorkingDir, "Pipfile.lock"))
 		if err != nil {
 			return packit.DetectResult{}, packit.Fail.WithMessage("failed trying to stat Pipfile.lock: %w", err)
 		}
@@ -103,15 +104,4 @@ func Detect(pipfileParser, pipfileLockParser Parser) packit.DetectFunc {
 			},
 		}, nil
 	}
-}
-
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
 }

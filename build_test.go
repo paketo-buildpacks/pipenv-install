@@ -30,7 +30,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		buffer     *bytes.Buffer
 		logEmitter scribe.Emitter
 
-		entryResolver       *fakes.EntryResolver
 		installProcess      *fakes.InstallProcess
 		sitePackagesProcess *fakes.SitePackagesProcess
 		venvDirLocator      *fakes.VenvDirLocator
@@ -51,7 +50,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		cnbDir, err = os.MkdirTemp("", "cnb")
 		Expect(err).NotTo(HaveOccurred())
 
-		entryResolver = &fakes.EntryResolver{}
 		installProcess = &fakes.InstallProcess{}
 		sitePackagesProcess = &fakes.SitePackagesProcess{}
 		venvDirLocator = &fakes.VenvDirLocator{}
@@ -65,7 +63,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		logEmitter = scribe.NewEmitter(buffer)
 
 		build = pipenvinstall.Build(
-			entryResolver,
 			installProcess,
 			sitePackagesProcess,
 			venvDirLocator,
@@ -139,11 +136,6 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		Expect(installProcess.ExecuteCall.Receives.TargetLayer.Path).To(Equal(filepath.Join(layersDir, "packages")))
 		Expect(installProcess.ExecuteCall.Receives.CacheLayer.Path).To(Equal(filepath.Join(layersDir, "cache")))
 
-		Expect(entryResolver.MergeLayerTypesCall.Receives.Name).To(Equal("site-packages"))
-		Expect(entryResolver.MergeLayerTypesCall.Receives.Entries).To(Equal([]packit.BuildpackPlanEntry{
-			{Name: "site-packages"},
-		}))
-
 		Expect(buffer.String()).To(ContainSubstring("Some Buildpack some-version"))
 		Expect(buffer.String()).To(ContainSubstring("Executing build process"))
 
@@ -152,8 +144,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 	context("site-packages required at build and launch", func() {
 		it.Before(func() {
-			entryResolver.MergeLayerTypesCall.Returns.Launch = true
-			entryResolver.MergeLayerTypesCall.Returns.Build = true
+			buildContext.Plan.Entries[0].Metadata = map[string]interface{}{
+				"launch": true,
+				"build":  true,
+			}
 		})
 
 		it("layer's build, launch, cache flags must be set", func() {
@@ -181,8 +175,10 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 				}
 				return nil
 			}
-			entryResolver.MergeLayerTypesCall.Returns.Launch = true
-			entryResolver.MergeLayerTypesCall.Returns.Build = true
+			buildContext.Plan.Entries[0].Metadata = map[string]interface{}{
+				"launch": true,
+				"build":  true,
+			}
 		})
 
 		it("result should include a cache layer", func() {
