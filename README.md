@@ -1,5 +1,5 @@
 # Pipenv Install Cloud Native Buildpack
-The Paketo Pipenv Install Buildpack is a Cloud Native Buildpack that installs
+The Paketo Buildpack for Pipenv Install is a Cloud Native Buildpack that installs
 packages using pipenv and makes it available to the application.
 
 The buildpack is published for consumption at
