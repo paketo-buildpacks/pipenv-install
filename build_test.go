@@ -43,6 +43,7 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 		var err error
 		layersDir, err = os.MkdirTemp("", "layers")
 		Expect(err).NotTo(HaveOccurred())
+		Expect(os.MkdirAll(filepath.Join(layersDir, "cache"), os.ModePerm)).To(Succeed())
 
 		workingDir, err = os.MkdirTemp("", "working-dir")
 		Expect(err).NotTo(HaveOccurred())
@@ -194,10 +195,67 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 			cacheLayer := layers[1]
 			Expect(cacheLayer.Name).To(Equal("cache"))
 			Expect(cacheLayer.Path).To(Equal(filepath.Join(layersDir, "cache")))
+			Expect(cacheLayer.Metadata["stack"]).To(Equal("some-stack"))
 
 			Expect(cacheLayer.Build).To(BeFalse())
 			Expect(cacheLayer.Launch).To(BeFalse())
 			Expect(cacheLayer.Cache).To(BeTrue())
+		})
+	})
+
+	context("if the stack id changes", func() {
+		it.Before(func() {
+			Expect(os.WriteFile(filepath.Join(layersDir, "cache", "some-cache"), []byte{}, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(layersDir, "cache.toml"), []byte(`
+[metadata]
+  stack = "some-stack"
+`), 0644))
+		})
+
+		it("empties the cache layer", func() {
+			_, err := build(packit.BuildContext{
+				WorkingDir: workingDir,
+				BuildpackInfo: packit.BuildpackInfo{
+					Name:    "Some Buildpack",
+					Version: "0.0.1",
+				},
+				Platform: packit.Platform{
+					Path: "some-platform-path",
+				},
+				Layers: packit.Layers{Path: layersDir},
+				Stack:  "other-stack",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(filepath.Join(layersDir, "cache", "some-cache")).NotTo(BeAnExistingFile())
+		})
+	})
+
+	context("if the stack id is the same", func() {
+		it.Before(func() {
+			Expect(os.WriteFile(filepath.Join(layersDir, "cache", "some-cache"), []byte{}, 0600)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(layersDir, "cache.toml"), []byte(`
+[metadata]
+  stack = "some-stack"
+`), 0644))
+		})
+
+		it("keeps the cache layer", func() {
+			_, err := build(packit.BuildContext{
+				WorkingDir: workingDir,
+				BuildpackInfo: packit.BuildpackInfo{
+					Name:    "Some Buildpack",
+					Version: "0.0.1",
+				},
+				Platform: packit.Platform{
+					Path: "some-platform-path",
+				},
+				Layers: packit.Layers{Path: layersDir},
+				Stack:  "some-stack",
+			})
+			Expect(err).NotTo(HaveOccurred())
+
+			Expect(filepath.Join(layersDir, "cache", "some-cache")).To(BeAnExistingFile())
 		})
 	})
 
@@ -209,6 +267,27 @@ func testBuild(t *testing.T, context spec.G, it spec.S) {
 
 			it.After(func() {
 				Expect(os.Chmod(layersDir, os.ModePerm)).To(Succeed())
+			})
+
+			it("returns an error", func() {
+				_, err := build(buildContext)
+				Expect(err).To(MatchError(ContainSubstring("permission denied")))
+			})
+		})
+
+		context("when the cache layer cannot be reset", func() {
+			it.Before(func() {
+				Expect(os.MkdirAll(filepath.Join(layersDir, "cache"), os.ModePerm)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(layersDir, "cache", "some-cache"), []byte{}, 0600)).To(Succeed())
+				Expect(os.WriteFile(filepath.Join(layersDir, "cache.toml"), []byte(`
+[metadata]
+  stack = "other-stack"
+`), 0644))
+				Expect(os.Chmod(filepath.Join(layersDir, "cache"), 0500)).To(Succeed())
+			})
+
+			it.After(func() {
+				Expect(os.Chmod(filepath.Join(layersDir, "cache"), os.ModePerm)).To(Succeed())
 			})
 
 			it("returns an error", func() {

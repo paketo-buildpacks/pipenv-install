@@ -64,6 +64,17 @@ func Build(
 		if err != nil {
 			return packit.BuildResult{}, err
 		}
+		stack, ok := cacheLayer.Metadata["stack"]
+		if ok && stack.(string) != context.Stack {
+			cacheLayer, err = cacheLayer.Reset()
+			if err != nil {
+				return packit.BuildResult{}, err
+			}
+		}
+		if cacheLayer.Metadata == nil {
+			cacheLayer.Metadata = make(map[string]interface{})
+		}
+		cacheLayer.Metadata["stack"] = context.Stack
 
 		planner := draft.NewPlanner()
 		packagesLayer.Launch, packagesLayer.Build = planner.MergeLayerTypes(SitePackages, context.Plan.Entries)
