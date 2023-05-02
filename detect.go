@@ -34,13 +34,14 @@ type Parser interface {
 // and requires cpython and pipenv at build.
 func Detect(pipfileParser, pipfileLockParser Parser) packit.DetectFunc {
 	return func(context packit.DetectContext) (packit.DetectResult, error) {
-		_, err := os.Stat(filepath.Join(context.WorkingDir, "Pipfile"))
+		exists, err := fs.Exists(filepath.Join(context.WorkingDir, "Pipfile"))
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				return packit.DetectResult{}, packit.Fail
-			}
 
 			return packit.DetectResult{}, err
+		}
+
+		if !exists {
+			return packit.DetectResult{}, packit.Fail.WithMessage("no 'Pipfile' found")
 		}
 
 		cpythonRequirement := packit.BuildPlanRequirement{
