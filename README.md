@@ -2,8 +2,7 @@
 The Paketo Buildpack for Pipenv Install is a Cloud Native Buildpack that installs
 packages using pipenv and makes it available to the application.
 
-The buildpack is published for consumption at
-`gcr.io/paketo-buildpacks/pipenv-install` and `paketobuildpacks/pipenv-install`.
+The buildpack is published for consumption at `paketobuildpacks/pipenv-install`.
 
 ## Behavior
 This buildpack participates if `Pipfile` exists at the root of the app.
