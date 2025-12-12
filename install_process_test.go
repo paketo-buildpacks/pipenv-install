@@ -60,12 +60,15 @@ func testInstallProcess(t *testing.T, context spec.G, it spec.S) {
 			if len(execution.Args) < 1 || execution.Args[0] != "install" {
 				return nil
 			}
-			fmt.Fprintln(execution.Stdout, "stdout output")
-			fmt.Fprintln(execution.Stderr, "stderr output")
+			_, err := fmt.Fprintln(execution.Stdout, "stdout output")
+			Expect(err).NotTo(HaveOccurred())
+			_, err = fmt.Fprintln(execution.Stderr, "stderr output")
+			Expect(err).NotTo(HaveOccurred())
 			Expect(os.Mkdir(filepath.Join(packagesLayerPath, "some-virtualenv-dir"), os.ModePerm)).To(Succeed())
 			f, err := os.Create(filepath.Join(packagesLayerPath, "some-virtualenv-dir", "pyvenv.cfg"))
 			Expect(err).NotTo(HaveOccurred())
-			f.Close()
+			err = f.Close()
+			Expect(err).NotTo(HaveOccurred())
 			return nil
 		}
 
