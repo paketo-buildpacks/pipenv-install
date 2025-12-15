@@ -87,7 +87,7 @@ func testDefault(t *testing.T, context spec.G, it spec.S) {
 			))
 			Expect(logs).To(ContainLines(
 				// Due to Pipfile requirement
-				MatchRegexp(`    Installing CPython 3.9.\d+`),
+				MatchRegexp(`    Installing CPython 3.10.\d+`),
 			))
 
 			container, err = docker.Container.Run.
